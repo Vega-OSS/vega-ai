@@ -1,0 +1,62 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  go-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Go Format
+        run: |
+          go fmt ./...
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Go code is not formatted."
+            exit 1
+          fi
+      - name: Go Test
+        run: go test -v -coverprofile=coverage.out ./...
+      - name: Check Coverage
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+          echo "Total coverage: $COVERAGE%"
+          # Enforce threshold (e.g. 70%)
+          # if (( $(echo "$COVERAGE < 70" | bc -l) )); then exit 1; fi
+
+  python-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Check formatting with ruff
+        run: uvx ruff check .
+      - name: Python Test
+        run: |
+          # Requires a pytest structure to run
+          # uv run pytest --cov=. --cov-fail-under=70
+
+  node-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check formatting
+        run: echo "Prettier/Eslint check will go here"
+      - name: Node Test
+        run: echo "Jest/Vitest will go here"
