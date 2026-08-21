@@ -1,0 +1,15 @@
+# Global Codeowners
+*       @Vega-OSS/maintainers
+
+# Microservices Ownership
+/apps/controlplane/      @Vega-OSS/backend-core
+/apps/execution-engine/  @Vega-OSS/ai-engine
+/apps/scheduler/         @Vega-OSS/backend-core
+/apps/gateway-llm/       @Vega-OSS/gateway-team
+/apps/mcp-server/        @Vega-OSS/ai-engine
+/apps/web/               @Vega-OSS/frontend-team
+/apps/bff/               @Vega-OSS/frontend-team
+
+# Infra & Protobufs
+/deploy/                 @Vega-OSS/infra-team
+/packages/proto/         @Vega-OSS/backend-core
