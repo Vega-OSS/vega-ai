@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package vega.v1;
+
+option go_package = "github.com/Vega-OSS/vega-ai/packages/proto/vega/v1;vegav1";
+
+service HealthService {
+  rpc Check (HealthCheckRequest) returns (HealthCheckResponse) {}
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+}
