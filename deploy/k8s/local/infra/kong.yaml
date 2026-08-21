@@ -1,10 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-declarative-config
+  namespace: default
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    
+    services:
+    - name: gateway-llm
+      url: http://gateway-llm.default.svc.cluster.local:8080
+      routes:
+      - name: llm-route
+        paths:
+        - /v1/chat/completions
+    
+    # Global Plugins for Security and Resilience
+    plugins:
+    - name: rate-limiting
+      config:
+        minute: 100
+        policy: local
+    - name: key-auth
+      config:
+        key_names: ["apikey"]
+    - name: bot-detection # basic DDOS/Bot protection
+      config:
+        allow: []
+        deny: []
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kong
   namespace: default
 spec:
-  replicas: 1
+  replicas: 3 # Highly Available
   selector:
     matchLabels:
       app: kong
@@ -13,6 +44,18 @@ spec:
       labels:
         app: kong
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - kong
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: kong
         image: kong:latest
@@ -29,13 +72,16 @@ spec:
           value: "/dev/stderr"
         - name: KONG_ADMIN_ERROR_LOG
           value: "/dev/stderr"
-        - name: KONG_ADMIN_LISTEN
-          value: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
         ports:
         - containerPort: 8000
         - containerPort: 8443
-        - containerPort: 8001
-        - containerPort: 8444
+        volumeMounts:
+        - name: kong-config
+          mountPath: /etc/kong/
+      volumes:
+      - name: kong-config
+        configMap:
+          name: kong-declarative-config
 ---
 apiVersion: v1
 kind: Service
